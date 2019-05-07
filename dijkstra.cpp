@@ -109,7 +109,7 @@ void dijkstra::readIn()
     statusReport();
 }
 
-void dijkstra::perform(const QString &lat, const QString &lon, const QString &streetName)
+void dijkstra::perform(const QString &lat, const QString &lon)
 {
     coordinates toSearch(lat,lon);
     int pos = legend[toSearch];
@@ -141,54 +141,93 @@ coordinates dijkstra::closestOne(const coordinates &noFind, const QString &stree
 {
     auto toDecrement = closest[streetName.toUpper()].end();
     toDecrement--;
-    if( (closest[streetName.toUpper()].begin()->first.lattitude) > zipCode || toDecrement->first.lattitude < zipCode )
-        throw BAD_ADDRESS;
+    qDebug() << "smallest one is: " << (closest[streetName.toUpper()].begin()->first.lattitude)<< endl;
+    qDebug() << "largest one is: " << toDecrement->first.lattitude<< endl;
+    qDebug() << "looking at: " << zipCode << endl;
+    qDebug() << closest[streetName.toUpper()].size()  << endl;
+    if(closest[streetName.toUpper()].size() == 1)
+    {
+        qDebug() << "yooooo size is 1 " << endl;
+        qDebug() << "helloooo: " << closest[streetName.toUpper()].begin()->first.lattitude << endl;
+        qDebug() << "helloooo: " << closest[streetName.toUpper()].begin()->first.longitude << endl;
+        qDebug() <<  ((closest[streetName.toUpper()].begin()->first.lattitude.toInt()) > zipCode.toInt()) << endl;
+        qDebug() <<   ((closest[streetName.toUpper()].begin()->first.longitude.toInt())  < zipCode.toInt()) << endl;
+
+        bool one =  ((closest[streetName.toUpper()].begin()->first.lattitude.toInt()) > zipCode.toInt());
+        bool two =  ((closest[streetName.toUpper()].begin()->first.longitude.toInt())  < zipCode.toInt());
+        qDebug() << "one is: " << one << endl;
+        qDebug() << " two is: " << two << endl;
+        qDebug() << "OMFG STOP\n";
+        qDebug() <<  "resulto: " << (one || two ) << endl;
+        bool result = one || two;
+        qDebug() << "result is: " << result << endl;
+        if(result)
+        {
+            qDebug() << "bad\n";
+            throw BAD_ADDRESS;
+        }
+    }
     else
     {
-        address search(zipCode);
-        closest[streetName.toUpper()][search] = vector<coordinates>();
-        coordinates toReturn;
-        auto pos = closest[streetName.toUpper()].find(search);
-        --pos;
-        unsigned int shortest = 0;
-        double shortestPath = numeric_limits<double>::max(), hold;
-        for(unsigned int i = 0; i < pos->second.size(); ++i)
-        {
-            if((hold = performHaversine(pos->second[i], noFind)) < shortestPath)
-            {
-                shortestPath = hold;
-                shortest = i;
-            }
-        }
-        toReturn = pos->second[shortest];
-        closest[streetName.toUpper()].erase(++pos);
-        return toReturn;
+        if( (closest[streetName.toUpper()].begin()->first.lattitude.toInt()) > zipCode.toInt() || toDecrement->first.lattitude.toInt() < zipCode.toInt())
+            throw BAD_ADDRESS;
     }
+
+    address search(zipCode);
+    closest[streetName.toUpper()][search] = vector<coordinates>();
+    coordinates toReturn;
+    auto pos = closest[streetName.toUpper()].find(search);
+    --pos;
+    unsigned int shortest = 0;
+    double shortestPath = numeric_limits<double>::max(), hold;
+    for(unsigned int i = 0; i < pos->second.size(); ++i)
+    {
+        if((hold = performHaversine(pos->second[i], noFind)) < shortestPath)
+        {
+            shortestPath = hold;
+            shortest = i;
+        }
+    }
+    toReturn = pos->second[shortest];
+    closest[streetName.toUpper()].erase(++pos);
+    return toReturn;
+
+
 }
 
 
-double dijkstra::getShortestPath(const QString &lat, const QString &lon,const QString &streetName, const QString &zipCode)
+double dijkstra::compileShortestPath(const QString &lat, const QString &lon,const QString &streetName, const QString &zipCode)
 {
-    qDebug() << "one\n";
     shortest = QStack<coordinates>();
     coordinates wtf(lat,lon);
     double distance;
-    qDebug() << "2\n";
     if(!legend.count(wtf))
     {
-        qDebug() << "had to utilize\n";
         wtf = closestOne(wtf, streetName, zipCode);
     }
-    qDebug() << "3\n";
     int pos = legend[wtf];
     distance = allVertexes[pos].shortestPath;
-    qDebug() << "4\n";
     while(pos != -1)
     {
         shortest.push(allVertexes[pos].coordinate);
         pos = allVertexes[pos].previous;
     }
     return distance;
+}
+
+double dijkstra::justShortest(const QString &lat, const QString &lon,const QString &streetName, const QString &zipCode)
+{
+    shortest = QStack<coordinates>();
+    coordinates wtf(lat,lon);
+    double distance;
+    if(!legend.count(wtf))
+    {
+        wtf = closestOne(wtf, streetName, zipCode);
+    }
+    int pos = legend[wtf];
+    distance = allVertexes[pos].shortestPath;
+    return distance;
+
 }
 
 void dijkstra::statusReport()
@@ -203,13 +242,18 @@ dijkstra::~dijkstra()
     delete []graph;
 }
 
-void  dijkstra::toString()
+void dijkstra::toString()
 {
     while(!shortest.empty())
     {
         cout << shortest.top().lattitude.toStdString() << " , "  << shortest.top().longitude.toStdString() << endl;
         shortest.pop();
     }
+}
+
+bool dijkstra::withinBounds(const QString &streetName)
+{
+    return (closest.count(streetName.toUpper()));
 }
 
 

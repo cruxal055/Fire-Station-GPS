@@ -51,10 +51,12 @@ class dijkstra
     double performHaversine(const coordinates &one, const coordinates &two);
 
     public:
-    double getShortestPath(const QString &lat, const QString &lon,const QString &streetName, const QString &zipCode);
-    void perform(const QString &lat, const QString &lon, const QString &streetName);
+    double compileShortestPath(const QString &lat, const QString &lon,const QString &streetName, const QString &zipCode);
+    double justShortest(const QString &lat, const QString &lon,const QString &streetName, const QString &zipCode);
+    void perform(const QString &lat, const QString &lon);
     void statusReport();
     void toString();
+    bool withinBounds(const QString &streetName);
 };
 
 

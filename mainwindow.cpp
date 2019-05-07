@@ -17,9 +17,11 @@ MainWindow::MainWindow(QWidget *parent)
     setupSignalsAndSlots();
     displayMap();
 
-    master[0].perform("34.12416049793684", "-118.21936667211293", "where");
-    //       temp.getShortestPath("34.115197150389598", "-118.224690123437298");
-//    master[0].getShortestPath("34.115197150389598", "-118.224690123437298");
+    master[0].perform("34.12416049793684", "-118.21936667211293"); //york
+    master[1].perform("34.13948426993484", "-118.21073194836286"); //colorado
+    master[2].perform("34.11091760266492", "-118.19074248113876"); //Fug.
+
+
 }
 
 MainWindow::~MainWindow()
@@ -35,7 +37,6 @@ void MainWindow::setupSignalsAndSlots()
     connect(ui->quitButton,SIGNAL(clicked(bool)),this,SLOT(close()));
 //    connect(ui->loadButton,SIGNAL(clicked(bool)),this,SLOT(loadMap()));
     connect(ui->tester, SIGNAL(clicked(bool)), this, SLOT(testFunc()));
-    connect(ui->loadButton, SIGNAL(clicked(bool)), this, SLOT(addresso()));
 }
 
 
@@ -53,14 +54,7 @@ void MainWindow::displayMap()
     page->load(QUrl(QUrl::fromLocalFile(dir.canonicalPath())));
 }
 
-void MainWindow::addresso()
-{
-    QJsonArray temp;
-    temp.push_back("9917");
-    temp.push_back("Workman Ave.");
-    emit getCoordinate(temp);
 
-}
 void MainWindow::testFunc()
 {
     QStack<QString> stuff;
@@ -68,9 +62,9 @@ void MainWindow::testFunc()
     QVariantList temp;
     QJsonObject wtf1, wtf2;
     QJsonArray oofOwie;
-    master[0].getShortestPath("34.136015977443542", "-118.221345633423269", "", "");
-    if(master[0].shortest.empty())
-        qDebug() << "it's empty\n";
+//    master[0].getShortestPath("34.136015977443542", "-118.221345633423269");
+
+
     while(!master[0].shortest.empty())
     {
         coordinates temp = master[0].shortest.top();
@@ -137,36 +131,76 @@ void MainWindow::updateLatLong(const QString &latLng)
     ui->currLatLng->setText("Current position: " + latLng);
     QStringList regex = latLng.split(" ");
     qDebug() << "size of regex is: " << regex.size() << endl;
+    if(regex[4] == "Rd")
+        regex[4] = "ROAD";
     if(regex.size() > 5)
     {
+        if(regex[3].size() == 1)
+        {
+            regex[3] = regex[4];
+            regex.erase(regex.begin()+4);
+        }
         for(int i = 4; i < regex.size(); ++i)
             regex[3]+= " " + regex[i];
     }
     else
-
         regex[3] += " " + regex[4];
 
     for(int i = 0; i < regex.size(); ++i)
-    {//p
+    {
         qDebug() << regex[i] << " ";
     }
     qDebug() << endl;
-    master[0].getShortestPath(regex[0], regex[1], regex[3], regex[2]);
+//    master[0].getShortestPath(regex[0], regex[1], regex[3], regex[2]);
+
+    if(!master[0].withinBounds(regex[3]))
+    {
+        QMessageBox::information(
+        this,
+        tr("Error!"),
+        tr("Not within the bounds of eagle rock!") );
+        emit resetNeeded();
+
+        return;
+    }
+
+
     QStack<QString> stuff;
     QString oof = "oof";
     QVariantList temp;
     QJsonObject wtf1, wtf2;
     QJsonArray oofOwie;
-    if(master[0].shortest.empty())
-        qDebug() << "it's empty\n";
-    while(!master[0].shortest.empty())
+
+    int smallestPos = 0;
+    double smallest = master[0].justShortest(regex[0], regex[1], regex[3], regex[2]);
+    double one =  master[1].justShortest(regex[0], regex[1], regex[3], regex[2]),
+           two =  master[2].justShortest(regex[0], regex[1], regex[3], regex[2]);
+    if (smallest > one)
     {
-        coordinates temp = master[0].shortest.top();
-        master[0].shortest.pop();
+        smallest = one;
+        smallestPos = 1;
+    }
+    else
+    {
+        if (smallest > two)
+        {
+            smallest = two;
+            smallestPos = 2;
+        }
+    }
+    master[smallestPos].compileShortestPath(regex[0], regex[1], regex[3], regex[2]);
+
+    while(!master[smallestPos].shortest.empty())
+    {
+        coordinates temp = master[smallestPos].shortest.top();
+        master[smallestPos].shortest.pop();
         oofOwie.push_back(QJsonValue(temp.lattitude + ", " + temp.longitude));
     }
+    qDebug() << "emitting!!!\n";
+
     emit testing(oofOwie);
-    }catch(errors e)
+    }
+    catch(errors e)
     {
         if(e == BAD_ADDRESS)
         {

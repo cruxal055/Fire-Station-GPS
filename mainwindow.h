@@ -16,6 +16,8 @@
 #include <QVariantList>
 #include "supportclasses.h"
 #include "dijkstra.h"
+#include <algorithm>
+#include <QMessageBox>
 
 namespace Ui
 {
@@ -34,13 +36,13 @@ class MainWindow : public QMainWindow
     public slots:
         void updateLatLong(const QString &latLng);
         void testFunc();
-        void addresso();
 
 
     signals:
         void testing(QJsonArray items);
         void drawMap();
         void getCoordinate(QJsonArray where);
+        void resetNeeded();
 
     private:
         Ui::MainWindow *ui;
@@ -54,6 +56,7 @@ class MainWindow : public QMainWindow
         void setupSignalsAndSlots();
         void displayMap();
         void getShorto(const QString &one, const QString &two);
+
         dijkstra *master;
 
     private slots:
