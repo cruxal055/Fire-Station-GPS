@@ -1,4 +1,6 @@
 #include "supportclasses.h"
+#include <QDebug>
+
 indexo::indexo()
 {
     distance = -1.;
@@ -110,24 +112,24 @@ address::address(const address &other)
 
 bool operator<=(const address &o1 ,const address &o2)
 {
-    return o1.lattitude <= o2.lattitude;
+    return o1.lattitude.toInt() <= o2.lattitude.toInt();
 }
 
 bool operator>=(const address &o1 ,const address &o2)
 {
-    return o1.lattitude >= o2.lattitude;
+    return o1.lattitude.toInt() >= o2.lattitude.toInt();
 }
 bool operator>(const address &o1 ,const address &o2)
 {
-    return o1.lattitude > o2.lattitude;
+    return o1.lattitude.toInt() > o2.lattitude.toInt();
 }
 bool operator<(const address &o1 ,const address &o2)
 {
-    return o1.lattitude < o2.lattitude;
+    return o1.lattitude.toInt() < o2.lattitude.toInt();
 }
 bool operator==(const address &o1 ,const address &o2)
 {
-    return o1.lattitude ==  o2.lattitude;
+    return o1.lattitude.toInt() ==  o2.lattitude.toInt();
 }
 
 vertex::vertex()
