@@ -37,11 +37,11 @@ class dijkstra
 
     private:
     vector<indexo> *graph;
+    vector<indexo> *speedLimitGraph;
     vertex *allVertexes;
+    vertex *allSpeedVertexes;
     map<coordinates, int> legend;
     map<QString,map<address, vector<coordinates> >  > closest;
-
-
     coordinates focus;
 
 
@@ -49,14 +49,17 @@ class dijkstra
     void readIn();
     coordinates closestOne(const coordinates &noFind, const QString &streetName, const QString &zipCode);
     double performHaversine(const coordinates &one, const coordinates &two);
+    void performAlgo(const coordinates &toSearch, vector<indexo> *graphToUse, vertex *vertexList);
+    double compile(coordinates &toSearch, const QString &streetName, const QString &zipCode, const vertex *vertexList);
 
     public:
-    double compileShortestPath(const QString &lat, const QString &lon,const QString &streetName, const QString &zipCode);
-    double justShortest(const QString &lat, const QString &lon,const QString &streetName, const QString &zipCode);
+    double compileShortestPath(const QString &lat, const QString &lon, const QString &streetName, const QString &zipCode, bool speed);
+    double justShortest(const QString &lat, const QString &lon, const QString &streetName, const QString &zipCode, bool speed);
     void perform(const QString &lat, const QString &lon);
     void statusReport();
     void toString();
     bool withinBounds(const QString &streetName);
+    bool legitStreet(const QString &streetName);
 };
 
 

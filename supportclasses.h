@@ -58,7 +58,7 @@ struct address
 };
 struct vertex
 {
-    int rank, previous;
+    int rank, previous, speedLimitPrev;
     coordinates coordinate;
     bool visited;
     double shortestPath;

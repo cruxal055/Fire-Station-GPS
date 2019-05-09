@@ -35,7 +35,6 @@ MainWindow::~MainWindow()
 void MainWindow::setupSignalsAndSlots()
 {
     connect(ui->quitButton,SIGNAL(clicked(bool)),this,SLOT(close()));
-//    connect(ui->loadButton,SIGNAL(clicked(bool)),this,SLOT(loadMap()));
     connect(ui->tester, SIGNAL(clicked(bool)), this, SLOT(testFunc()));
 }
 
@@ -43,7 +42,6 @@ void MainWindow::setupSignalsAndSlots()
 void MainWindow::displayMap()
 {
     QDir dir("../Resources/map.html");
-    //    "⁨Users⁩⁨/blank⁩/⁨Documents⁩/⁨Honors_Project⁩/mapItExample⁩/Contents⁩/⁨Resources/map.html"⁩
     QFileInfo exists("../Resources/map.html");
     if(exists.exists())
     {
@@ -71,26 +69,9 @@ void MainWindow::testFunc()
         master[0].shortest.pop();
         oofOwie.push_back(QJsonValue(temp.lattitude + ", " + temp.longitude));
     }
-
-//    wtf1.insert("stuff", "34.12416049793684, -118.21936667211293");
-//    oofOwie.push_back(QJsonValue("34.11202931911081, -118.199139905572622"));
-//    oofOwie.push_back(QJsonValue("34.112015756932813, -118.201564947701129"));
-//    oofOwie.push_back(QJsonValue("34.12416049793684, -118.21936667211293"));
-
-
-    /*
-
-     * */
-
-//        temp.push_back(wtf1);
-//    temp.push_back(wtf2);
     emit testing(oofOwie);
 }
 
-void MainWindow::loadMap()
-{
-    emit drawMap();
-}
 
 void MainWindow::getShorto(const QString &one, const QString &two)
 {
@@ -127,84 +108,113 @@ void MainWindow::setupWebEngine()
 
 void MainWindow::updateLatLong(const QString &latLng)
 {
-    try{
-    ui->currLatLng->setText("Current position: " + latLng);
-    QStringList regex = latLng.split(" ");
-    qDebug() << "size of regex is: " << regex.size() << endl;
-    if(regex[4] == "Rd")
-        regex[4] = "ROAD";
-    if(regex.size() > 5)
+    try
     {
-        if(regex[3].size() == 1)
+        qDebug() << "recieved: " << latLng << endl;
+        ui->currLatLng->setText("Current position: " + latLng);
+        if(latLng[latLng.size()-1] == ' ')
         {
-            regex[3] = regex[4];
-            regex.erase(regex.begin()+4);
+            QMessageBox::information(
+            this,
+            tr("Error!"),
+            tr("Recieved store name instead of an actual address"));
+            emit resetNeeded();
+            return;
         }
-        for(int i = 4; i < regex.size(); ++i)
-            regex[3]+= " " + regex[i];
-    }
-    else
-        regex[3] += " " + regex[4];
-
-    for(int i = 0; i < regex.size(); ++i)
-    {
-        qDebug() << regex[i] << " ";
-    }
-    qDebug() << endl;
-//    master[0].getShortestPath(regex[0], regex[1], regex[3], regex[2]);
-
-    if(!master[0].withinBounds(regex[3]))
-    {
-        QMessageBox::information(
-        this,
-        tr("Error!"),
-        tr("Not within the bounds of eagle rock!") );
-        emit resetNeeded();
-
-        return;
-    }
-
-
-    QStack<QString> stuff;
-    QString oof = "oof";
-    QVariantList temp;
-    QJsonObject wtf1, wtf2;
-    QJsonArray oofOwie;
-
-    int smallestPos = 0;
-    double smallest = master[0].justShortest(regex[0], regex[1], regex[3], regex[2]);
-    double one =  master[1].justShortest(regex[0], regex[1], regex[3], regex[2]),
-           two =  master[2].justShortest(regex[0], regex[1], regex[3], regex[2]);
-    if (smallest > one)
-    {
-        smallest = one;
-        smallestPos = 1;
-    }
-    else
-    {
-        if (smallest > two)
+        QStringList regex = latLng.split(" ");
+        if(regex.size() < 4)
         {
-            smallest = two;
-            smallestPos = 2;
+            QMessageBox::information(
+            this,
+            tr("Error!"),
+            tr("Recieved bad data!"));
+            emit resetNeeded();
+            return;
         }
-    }
-    master[smallestPos].compileShortestPath(regex[0], regex[1], regex[3], regex[2]);
+        qDebug() << "why are you doing this\n";
+        qDebug() << " size of regex is: " <<  regex.size() << endl;
+        if(!(regex[regex.size()-1] == "90041" || regex[regex.size()-1] == "90042" || regex[regex.size()-1] == "90065"))
+        {
+            QMessageBox::information(
+            this,
+            tr("Error!"),
+            tr("Not within the bounds of eagle rock!") );
+            emit resetNeeded();
+            return;
+        }
+        if(regex[4] == "Rd")
+            regex[4] = "ROAD";
+        if(regex.size() > 5)
+        {
+            if(regex[3].size() == 1)
+            {
+                regex[3] = regex[4];
+                regex.erase(regex.begin()+4);
+            }
+            for(int i = 4; i < regex.size()-1; ++i)
+                regex[3]+= " " + regex[i];
+        }
+        else
+            regex[3] += " " + regex[4];
 
-    while(!master[smallestPos].shortest.empty())
-    {
-        coordinates temp = master[smallestPos].shortest.top();
-        master[smallestPos].shortest.pop();
-        oofOwie.push_back(QJsonValue(temp.lattitude + ", " + temp.longitude));
-    }
-    qDebug() << "emitting!!!\n";
+        for(int i = 0; i < regex.size(); ++i)
+        {
+            qDebug() << regex[i] << " ";
+        }
+        qDebug() << endl;
+        if(!master[0].withinBounds(regex[3]))
+        {
+            QMessageBox::information(
+            this,
+            tr("Error!"),
+            tr("Not within the bounds of eagle rock!") );
+            emit resetNeeded();
 
-    emit testing(oofOwie);
-    }
-    catch(errors e)
+            return;
+        }
+        QStack<QString> stuff;
+        QString oof = "oof";
+        QVariantList temp;
+        QJsonObject wtf1, wtf2;
+        QJsonArray oofOwie;
+
+        int smallestPos = 0;
+        double smallest = master[0].justShortest(regex[0], regex[1], regex[3], regex[2], ui->speedLimitVer->isChecked());
+        double one =  master[1].justShortest(regex[0], regex[1], regex[3], regex[2], ui->speedLimitVer->isChecked()),
+               two =  master[2].justShortest(regex[0], regex[1], regex[3], regex[2], ui->speedLimitVer->isChecked());
+        if (smallest > one)
+        {
+            smallest = one;
+            smallestPos = 1;
+        }
+        else
+        {
+            if (smallest > two)
+            {
+                smallest = two;
+                smallestPos = 2;
+            }
+        }
+        master[smallestPos].compileShortestPath(regex[0], regex[1], regex[3], regex[2], ui->speedLimitVer->isChecked());
+
+        while(!master[smallestPos].shortest.empty())
+        {
+            coordinates temp = master[smallestPos].shortest.top();
+            master[smallestPos].shortest.pop();
+            oofOwie.push_back(QJsonValue(temp.lattitude + ", " + temp.longitude));
+        }
+
+        emit testing(oofOwie);
+    }catch(errors e)
     {
         if(e == BAD_ADDRESS)
         {
-            qDebug() << "Sent bad address!\n";
+            QMessageBox::information(
+            this,
+            tr("Error!"),
+            tr("Recieved bad address!!"));
+            emit resetNeeded();
+
         }
     }
 }
