@@ -35,8 +35,6 @@ class MainWindow : public QMainWindow
 
     public slots:
         void updateLatLong(const QString &latLng);
-        void testFunc();
-
 
     signals:
         void testing(QJsonArray items);
@@ -60,7 +58,6 @@ class MainWindow : public QMainWindow
         dijkstra *master;
 
     private slots:
-        void loadMap();
 };
 
 #endif // MAINWINDOW_H

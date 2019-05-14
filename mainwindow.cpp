@@ -35,42 +35,16 @@ MainWindow::~MainWindow()
 void MainWindow::setupSignalsAndSlots()
 {
     connect(ui->quitButton,SIGNAL(clicked(bool)),this,SLOT(close()));
-    connect(ui->tester, SIGNAL(clicked(bool)), this, SLOT(testFunc()));
 }
 
 
 void MainWindow::displayMap()
 {
     QDir dir("../Resources/map.html");
-    QFileInfo exists("../Resources/map.html");
-    if(exists.exists())
-    {
-        qDebug() << exists.absoluteFilePath() << endl;
-    }
-
-
     page->load(QUrl(QUrl::fromLocalFile(dir.canonicalPath())));
 }
 
 
-void MainWindow::testFunc()
-{
-    QStack<QString> stuff;
-    QString oof = "oof";
-    QVariantList temp;
-    QJsonObject wtf1, wtf2;
-    QJsonArray oofOwie;
-//    master[0].getShortestPath("34.136015977443542", "-118.221345633423269");
-
-
-    while(!master[0].shortest.empty())
-    {
-        coordinates temp = master[0].shortest.top();
-        master[0].shortest.pop();
-        oofOwie.push_back(QJsonValue(temp.lattitude + ", " + temp.longitude));
-    }
-    emit testing(oofOwie);
-}
 
 
 void MainWindow::getShorto(const QString &one, const QString &two)
@@ -79,7 +53,7 @@ void MainWindow::getShorto(const QString &one, const QString &two)
     QString oof = "oof";
     QVariantList temp;
     QJsonObject wtf1, wtf2;
-    QJsonArray oofOwie;
+    QJsonArray dataToEmit;
 //    master[0].getShortestPath(one, two);
     if(master[0].shortest.empty())
         qDebug() << "it's empty\n";
@@ -87,9 +61,9 @@ void MainWindow::getShorto(const QString &one, const QString &two)
     {
         coordinates temp = master[0].shortest.top();
         master[0].shortest.pop();
-        oofOwie.push_back(QJsonValue(temp.lattitude + ", " + temp.longitude));
+       dataToEmit.push_back(QJsonValue(temp.lattitude + ", " + temp.longitude));
     }
-    emit testing(oofOwie);
+    emit testing(dataToEmit);
 
 }
 void MainWindow::setupWebEngine()
@@ -110,14 +84,17 @@ void MainWindow::updateLatLong(const QString &latLng)
 {
     try
     {
-        qDebug() << "recieved: " << latLng << endl;
+        int whereToBegin = 3;//old was 3
+//        qDebug() << "ya? " << master[0].withinBounds("COLLEGE VIEW AVE") << endl;
+
         ui->currLatLng->setText("Current position: " + latLng);
+        qDebug() << "recieved: " << latLng << endl;
         if(latLng[latLng.size()-1] == ' ')
         {
             QMessageBox::information(
             this,
             tr("Error!"),
-            tr("Recieved store name instead of an actual address"));
+            tr("Recieved name of a place instead of an actual address"));
             emit resetNeeded();
             return;
         }
@@ -131,8 +108,16 @@ void MainWindow::updateLatLong(const QString &latLng)
             emit resetNeeded();
             return;
         }
-        qDebug() << "why are you doing this\n";
-        qDebug() << " size of regex is: " <<  regex.size() << endl;
+        if(regex[0] == "34.13927000000007" && regex[1] == "-118.21086999999994")
+        {
+            QMessageBox::information(
+            this,
+            tr("Already at eagle rock"),
+            tr("Already at eagle rock."
+               ""));
+            emit resetNeeded();
+            return;
+        }
         if(!(regex[regex.size()-1] == "90041" || regex[regex.size()-1] == "90042" || regex[regex.size()-1] == "90065"))
         {
             QMessageBox::information(
@@ -142,17 +127,63 @@ void MainWindow::updateLatLong(const QString &latLng)
             emit resetNeeded();
             return;
         }
-        if(regex[4] == "Rd")
-            regex[4] = "ROAD";
-        if(regex.size() > 5)
+        regex.erase(regex.end()-1);
+        if(regex[regex.size()-1] == "Rd")
+            regex[regex.size()-1] = "ROAD";
+        if(regex.size() >= 4)
         {
             if(regex[3].size() == 1)
             {
                 regex[3] = regex[4];
                 regex.erase(regex.begin()+4);
             }
-            for(int i = 4; i < regex.size()-1; ++i)
-                regex[3]+= " " + regex[i];
+            for(int i = 2; i < regex.size()-1; ++i )
+            {
+                QString toLook = regex[i];
+                for(int j = i+1; j < regex.size(); ++j)
+                {
+                    if(regex[j] == "Ave")
+                        regex[j] = "AVENUE";
+                    toLook += (" " + regex[j]);
+                }
+                if(master[0].withinBounds(toLook))
+                {
+                    qDebug() << "i like: " << toLook << endl;
+                    whereToBegin = i;
+                }
+                else
+                {
+                    qDebug() << "Was: " << toLook << endl;
+                    if(regex[regex.size()-1] == "AVENUE")
+                    {
+                        toLook.chop(6);
+                        toLook+=("AVE");
+                        if(master[0].withinBounds(toLook))
+                        {
+                            whereToBegin = i;
+                            regex[regex.size()-1] = "AVE";
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if(regex[regex.size()-1] == "AVE")
+                        {
+                            toLook.chop(3);
+                            toLook+=("AVENUE");
+                            if(master[0].withinBounds(toLook))
+                            {
+                                regex[regex.size()-1] = "AVENUE";
+                                whereToBegin = i;
+                                break;
+                            }
+                        }
+                    }
+                    qDebug() << "now: " << toLook << endl;
+                }
+            }
+            for(int i = whereToBegin+1; i < regex.size(); ++i)
+                regex[whereToBegin]+= " " + regex[i];
         }
         else
             regex[3] += " " + regex[4];
@@ -161,8 +192,12 @@ void MainWindow::updateLatLong(const QString &latLng)
         {
             qDebug() << regex[i] << " ";
         }
-        qDebug() << endl;
-        if(!master[0].withinBounds(regex[3]))
+//        if(regex[regex.size()-1].toUpper() == "AVENUE" || regex[regex.size()-1].toUpper() == "AVE")
+//        {
+//            if(master[0].withinBounds(regex))
+//        }
+
+        if(!master[0].withinBounds(regex[whereToBegin]))
         {
             QMessageBox::information(
             this,
@@ -179,23 +214,57 @@ void MainWindow::updateLatLong(const QString &latLng)
         QJsonArray oofOwie;
 
         int smallestPos = 0;
-        double smallest = master[0].justShortest(regex[0], regex[1], regex[3], regex[2], ui->speedLimitVer->isChecked());
-        double one =  master[1].justShortest(regex[0], regex[1], regex[3], regex[2], ui->speedLimitVer->isChecked()),
-               two =  master[2].justShortest(regex[0], regex[1], regex[3], regex[2], ui->speedLimitVer->isChecked());
+        QString useThis = " ";
+        if(whereToBegin != 2)
+        {
+            if(regex[2].size() != 1)
+                useThis = regex[2];
+            else
+            {
+                QMessageBox::information(
+                this,
+                tr("GENERAL STREET WARNING!!!!!!"),
+                tr("You have not given a specific address, but a general street, the program will direct you to the shortest path to the street"
+                   "be careful of lopsided streets!!!!!!!!!") );
+                emit resetNeeded();
+            }
+        }
+        if(whereToBegin == 2)
+        {
+            QMessageBox::information(
+            this,
+            tr("Warning!!!!!"),
+            tr("You have not given a specific address, but a general street, the program will direct you to the shortest path to the street") );
+            emit resetNeeded();
+
+        }
+        coordinates whereTo(regex[0], regex[1]);
+        coordinates whereTo2(regex[0], regex[1]);
+        coordinates whereTo3(regex[0], regex[1]);
+        coordinates toUse;
+
+        double smallest = master[0].justShortestVer2(whereTo, regex[whereToBegin], useThis, ui->speedLimitVer->isChecked());
+        toUse = whereTo;
+        double one =  master[1].justShortestVer2(whereTo2, regex[whereToBegin], useThis, ui->speedLimitVer->isChecked()),
+               two =  master[2].justShortestVer2(whereTo3,regex[whereToBegin], useThis, ui->speedLimitVer->isChecked());
+
         if (smallest > one)
         {
             smallest = one;
             smallestPos = 1;
+            toUse = whereTo2;
         }
         else
         {
             if (smallest > two)
             {
+                toUse = whereTo3;
                 smallest = two;
                 smallestPos = 2;
             }
         }
-        master[smallestPos].compileShortestPath(regex[0], regex[1], regex[3], regex[2], ui->speedLimitVer->isChecked());
+
+        master[smallestPos].compileShortestPath2(toUse,regex[whereToBegin], useThis, ui->speedLimitVer->isChecked());
 
         while(!master[smallestPos].shortest.empty())
         {

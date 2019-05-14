@@ -44,7 +44,6 @@
 	    widget.drawMap.connect(drawmap);
 			widget.testing.connect(testingStuff);//added this
 			widget.resetNeeded.connect(reset);
-      // widget.updateLatLong("LatLng(34.13889, -118.21360)");
 	});
 
 	mymap = L.map('mapid').setView([34.13889, -118.21360], 13);
@@ -61,9 +60,21 @@
 				coordinates = (data.results[data.results.length-1].latlng);
 				var temp1 = (data.results[data.results.length-1].latlng.lat +  " " + data.results[data.results.length-1].latlng.lng);
 				var temp2 = data.results[data.results.length-1].text;
-				temp2 = temp2.substring(0, temp2.indexOf(","));
-				window.alert("coordinates holds: " + coordinates);
-				 temp1 += (" " + temp2);
+				alert("temp 2 is: " + temp2);
+				if(temp2.indexOf(",") >= 0)
+				{
+					var zip = temp2.substring(temp2.lastIndexOf(",")+1);
+					if(zip[zip.length-1] == " ")
+							zip = zip.substring(0,zip.length-2);
+					temp2 = temp2.substring(0, temp2.indexOf(","));
+					 temp1 += (" " + temp2 + zip)
+			 }
+			 else
+			 {
+				 temp2 = temp2.substring(0, temp2.indexOf(","));
+					temp1 += (" " + temp2);
+			 }
+
 				 widget.updateLatLong(temp1);
 		});
 	marker = L.marker([34.13889, -118.21360]);
@@ -123,7 +134,7 @@ function testingStuff(jstuff)
 							 color: 'green',
 							 fillColor: '#66ff00',
 							 fillOpacity: 0.5,
-							 radius: 8
+							 radius: 20
 					})).addTo(mymap);
 					mymap.flyTo(temp, 18);
 					//mymap.panTo(temp);
@@ -144,7 +155,7 @@ function reset()
 {
 	if(remove)
 		mymap.removeLayer(remove)
-	mymap.flyTo([34.13889, -118.21360], 25);
+	mymap.panTo([34.13889, -118.21360], 15);
 	marker.setLatLng([34.13889, -118.21360]);
 }
 
