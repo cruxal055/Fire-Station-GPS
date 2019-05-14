@@ -1,264 +1,427 @@
 #include <QCoreApplication>
-#include <QXmlStreamReader>
-#include <QString>
-#include <QXmlStreamWriter>
-#include <QFile>
 #include <iostream>
-#include <cmath>
-#include <QDebug>
+#include <QXmlStreamReader>
+#include <map>
+#include <QFile>
 #include <set>
-
-#define PI 4.0*atan(1.0)
+#include <algorithm>
+#include <cmath>
 
 using namespace std;
 
+#define sSet set<street>
 
-struct coordinate
+#define PI 4.0*atan(1.0)
+
+
+struct coordinates
 {
-    QString lon, lat;
+    public:
+        QString lattitude, longitude;
+        coordinates()
+        {
+            lattitude = " ";
+            longitude = " ";
+        }
+        coordinates &operator=(const coordinates &other)
+        {
+            if(this != &other)
+            {
+                lattitude = other.lattitude;
+                longitude = other.longitude;
+            }
+            return *this;
+        }
 
-    coordinate()
+        coordinates(const coordinates &other)
+        {
+            lattitude = other.lattitude;
+            longitude = other.longitude;
+        }
+
+        friend bool operator<=(const coordinates &o1 ,const coordinates &o2)
+        {
+            return (o1.longitude.toDouble() + o1.lattitude.toDouble()) <= ((o2.longitude.toDouble() + o2.lattitude.toDouble()));
+        }
+
+        friend bool operator>=(const coordinates &o1 ,const coordinates &o2)
+        {
+            return (o1.longitude.toDouble() + o1.lattitude.toDouble()) >= ((o2.longitude.toDouble() + o2.lattitude.toDouble()));
+        }
+        friend bool operator>(const coordinates &o1 ,const coordinates &o2)
+        {
+            return (o1.longitude.toDouble() + o1.lattitude.toDouble()) > ((o2.longitude.toDouble() + o2.lattitude.toDouble()));
+        }
+        friend bool operator<(const coordinates &o1 ,const coordinates &o2)
+        {
+            return (o1.longitude.toDouble() + o1.lattitude.toDouble()) < ((o2.longitude.toDouble() + o2.lattitude.toDouble()));
+        }
+};
+
+
+struct tempData
+{
+    double distance;
+    coordinates place;
+    int pos;
+    int speedLimit;
+    tempData()
     {
-        lat = lon = "";
+        distance = 0.;
+        pos = 0;
+        place = coordinates();
     }
 
-    coordinate(const QString &lat, const QString &lon)
-    {
-        this->lat = lat;
-        this->lon = lon;
-    }
-
-    coordinate(const coordinate &other)
-    {
-        copy(other);
-    }
-
-    coordinate& operator=(const coordinate &other)
+    tempData& operator=(const tempData &other)
     {
         if(this != &other)
-            copy(other);
-        return *this;
+        {
+            pos = other.pos;
+            distance = other.distance;
+            place = other.place;
+        }
+        return  *this;
     }
 
-    void copy(const coordinate &other)
+    tempData(const tempData &other)
     {
-        lon = other.lon;
-        lat = other.lat;
+        pos = other.pos;
+        distance = other.distance;
+        place = other.place;
     }
 
-    friend bool operator==(const coordinate &one, const coordinate &two)
+    friend bool operator<=(const tempData &o1 ,const tempData &o2)
     {
-        return (one.lat == two.lat) && (one.lon == two.lon);
-    }
-
-    friend bool operator<=(const coordinate &one, const coordinate &two)
-    {
-        return (one.lat <= two.lat);
-    }
-
-    friend bool operator>=(const coordinate &one, const coordinate &two)
-    {
-        return (one.lat >= two.lat);
-    }
-
-    friend bool operator<(const coordinate &one, const coordinate &two)
-    {
-        return (one.lat < two.lat);
-    }
-
-    friend bool operator>(const coordinate &one, const coordinate &two)
-    {
-        return (one.lat > two.lat);
+        return o1.distance <= o2.distance;
     }
 
 
-
-    ~coordinate()
+    friend bool operator>=(const tempData &o1 ,const tempData &o2)
     {
-        lon = lat = "";
+        return o1.distance >= o2.distance;
+    }
+
+    friend bool operator<(const tempData &o1 ,const tempData &o2)
+    {
+        return o1.distance < o2.distance;
+    }
+
+
+    friend bool operator>(const tempData &o1 ,const tempData &o2)
+    {
+        return o1.distance > o2.distance;
     }
 
 
 };
 
-void open(QXmlStreamReader &toInput, QXmlStreamWriter &toOutput,  QFile &in, QFile &out);
-void performReadAndWrite(QXmlStreamReader &toInput, QXmlStreamWriter &toOutput);
-QString performHaversine(const coordinate &one, const coordinate &two);
+class street
+{
+    public:
 
+        QString fromAddress, toAddress, streetNum, zipCode;
+        int speedLimit;
+        QString streetName, streetSFX;
+        QString direction;
+        vector<coordinates> waypoints;
+        set<coordinates> hasAlready;
 
+        street()
+        {
+            fromAddress = toAddress = streetNum = zipCode = "";
+            streetName = streetSFX = "";
+            direction = "";
+            speedLimit = 0;
+        }
+
+        street(const street &other)
+        {
+            fromAddress = other.fromAddress;
+            toAddress = other.toAddress;
+            streetNum = other.streetNum;
+            zipCode = other.zipCode;
+            streetName = other.streetName;
+            streetSFX = other.streetSFX;
+            direction = other.direction;
+            waypoints = other.waypoints;
+            hasAlready = other.hasAlready;
+            speedLimit = other.speedLimit;
+        }
+
+        street& operator=(const street &other)
+        {
+            if(this != &other)
+            {
+                fromAddress = other.fromAddress;
+                toAddress = other.toAddress;
+                streetNum = other.streetNum;
+                zipCode = other.zipCode;
+                streetName = other.streetName;
+                streetSFX = other.streetSFX;
+                direction = other.direction;
+                waypoints = other.waypoints;
+               hasAlready = other.hasAlready;
+               speedLimit = other.speedLimit;
+
+            }
+            return *this;
+        }
+        friend bool operator<=(const street &o1 ,const street &o2)
+        {
+            return o1.fromAddress.toInt() <= o2.fromAddress.toInt() ;
+        }
+
+        friend bool operator>=(const street &o1 ,const street &o2)
+        {
+            return o1.fromAddress.toInt() >= o2.fromAddress.toInt() ;
+        }
+        friend bool operator>(const street &o1 ,const street &o2)
+        {
+            return o1.fromAddress.toInt() > o2.fromAddress.toInt();
+        }
+        friend bool operator<(const street &o1 ,const street &o2)
+        {
+            return o1.fromAddress.toInt() < o2.fromAddress.toInt() ;
+        }
+};
+
+double performHaversine(const coordinates &one, const coordinates &two)
+{
+
+       double lat1 = one.lattitude.toDouble() * (PI/180.), long1 = one.longitude.toDouble() * (PI/180.);
+       double lat2 = two.lattitude.toDouble() * (PI/180.), long2 = two.longitude.toDouble()* (PI/180.),
+               dLat = lat2 - lat1, dLong = long2 - long1;
+        double computation = asin(sqrt(sin(dLat / 2.) * sin(dLat / 2.) + cos(lat1) * cos(lat2) * sin(dLong / 2.) * sin(dLong / 2.)));
+        double d = 3959.9 * 2 * computation;
+        return d;
+}
+
+void writeOut(map<QString, sSet> &toOutput)
+{
+    QFile out;
+    QXmlStreamWriter output;
+    out.setFileName("santized_4_8.xml");
+    out.open(QIODevice::WriteOnly);
+    output.setDevice(&out);
+    output.setAutoFormatting(true);
+    output.writeStartDocument();
+    output.writeStartElement("EAGLE_ROCK");
+    for(auto i = toOutput.begin(); i != toOutput.end(); ++i)
+    {
+        auto temp = i->second.begin();
+        output.writeStartElement("STREET");
+        output.writeTextElement("STREET_NAME", temp->streetName);
+        output.writeTextElement("STREET_NUM", temp->streetNum);
+        output.writeTextElement("STREET_SFX", temp->streetSFX);
+        output.writeTextElement("TDIR", temp->direction);
+        output.writeTextElement("ZIP", temp->zipCode);
+        output.writeTextElement("SPEED_LIMIT", QString::fromStdString(to_string(temp->speedLimit)));
+
+       for(auto j = i->second.begin(); j != i->second.end(); ++j)
+       {
+           output.writeTextElement("FROM_ADDRESS", j->fromAddress
+                                   );
+           output.writeTextElement("TO_ADDRESS", j->toAddress);
+       }
+       for(auto j = i->second.begin(); j != i->second.end(); ++j)
+       {
+           for(unsigned int k = 0; k < j->waypoints.size(); ++k)
+           {
+               output.writeTextElement("LATTITUDE" , j->waypoints[k].lattitude);
+               output.writeTextElement("LONGITUDE" ,  j->waypoints[k].longitude);
+           }
+           auto temp = j;
+           if( ++temp != i->second.end())
+            output.writeTextElement("INTERSECTION" ,  "-------------------------------");
+
+       }
+       output.writeEndElement();
+    }
+    output.writeEndElement();
+    output.writeEndDocument();
+
+}
+
+void justDisplay(map<QString, sSet> &toOutput)
+{
+    for(auto i = toOutput.begin(); i != toOutput.end() ; ++i)
+    {
+        cout << "for street: " << i->first.toStdString() << endl;
+        for(auto j = i->second.begin(); j != i->second.end(); ++j)
+        {
+            cout << "FROM_ADDRESS: " << j->fromAddress.toStdString() << endl;
+            cout << "TO_ADDRESS: " << j->toAddress.toStdString() << endl;;
+        }
+        cout << endl;
+    }
+}
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
-    QFile in, out;
-    QXmlStreamReader input;
-    QXmlStreamWriter output;
-    open(input,output, in, out);
-    performReadAndWrite(input,output);
-    cout << "done\n";
+    QFile stream;
+    stream.setFileName("/Users/blank/Documents/Honors_Project/build-reparserTWO-Desktop_Qt_5_11_0_clang_64bit-Debug/streets10_2.xml");
+    stream.open(QFile::ReadOnly | QFile::Text);
+    map<QString,sSet> master;
+    QXmlStreamReader streamer;
+    streamer.setDevice(&stream);
+    streamer.readNextStartElement();
+    streamer.readNextStartElement();
+    bool skp = false;
+
+    while(!streamer.atEnd())
+    {
+        string item;
+        street temp;
+        coordinates grid;
+
+        if(streamer.name() == "STREET" )
+        {
+            streamer.readNextStartElement();
+
+            temp.streetName = streamer.readElementText();
 
 
-//    return a.exec();
+            streamer.readNextStartElement();
+            temp.streetNum = streamer.readElementText();
+
+            streamer.readNextStartElement();
+            if(streamer.name() == "STSFX")
+            {
+                temp.streetSFX = streamer.readElementText();
+                streamer.readNextStartElement();
+            }
+
+            temp.speedLimit = streamer.readElementText().toInt();
+            streamer.readNextStartElement();
+
+
+            temp.direction = streamer.readElementText();
+            streamer.readNextStartElement();
+
+            temp.zipCode = streamer.readElementText();
+            streamer.readNextStartElement();
+
+            if(streamer.name() =="SKIP")
+            {
+                streamer.readElementText();
+                streamer.readNextStartElement();
+                streamer.readNextStartElement();
+                skp = true;
+                continue;
+            }
+
+            skp = false;
+            temp.fromAddress = streamer.readElementText();
+            streamer.readNextStartElement();
+
+
+            temp.toAddress = streamer.readElementText();
+            streamer.readNextStartElement();
+
+
+
+            while(streamer.name() == "LATITUDE")
+            {
+                grid.lattitude = streamer.readElementText();
+
+
+                streamer.readNextStartElement();
+                grid.longitude = streamer.readElementText();
+
+                streamer.readNextStartElement();
+
+                temp.hasAlready.insert(grid);
+                temp.waypoints.push_back(grid);
+
+            }
+            streamer.readNextStartElement();
+        }
+        else
+        {
+            cout << "finished parsing\n";
+            break;
+        }
+        if(streamer.hasError())
+        {
+            cout << streamer.errorString().toStdString() << endl;
+        }
+        //figueroa
+        if(temp.streetName == "FIGUEROA")
+        {
+            if(5921 >= temp.fromAddress.toInt() && 5921 <= temp.toAddress.toInt())
+            {
+                coordinates tempC;
+                vector<tempData> stuff;
+                tempC.lattitude = "34.11091760266492";
+                tempC.longitude = "-118.19074248113876";
+                for(unsigned int i = 0; i < temp.waypoints.size(); ++i)
+                {
+                    tempData ono;
+                    ono.place = temp.waypoints[i];
+                    ono.pos = i;
+                    ono.distance = performHaversine( temp.waypoints[i], tempC);
+                    stuff.push_back(ono);
+                }
+                sort(stuff.begin(), stuff.end());
+                temp.waypoints.begin() + stuff[0].pos;
+                temp.waypoints.insert(temp.waypoints.begin() + stuff[0].pos,  tempC);
+            }
+        }
+        else
+        {
+            if(temp.streetName == "YORK")
+            {
+                if(4455 >= temp.fromAddress.toInt() && 4455 <= temp.toAddress.toInt())
+                {
+
+                    coordinates tempC;
+                    vector<tempData> stuff;
+                    tempC.lattitude = "34.12416049793684";
+                    tempC.longitude = "-118.21936667211293";
+                    for(unsigned int i = 0; i < temp.waypoints.size(); ++i)
+                    {
+                        tempData ono;
+                        ono.place = temp.waypoints[i];
+                        ono.pos = i;
+                        ono.distance = performHaversine( temp.waypoints[i], tempC);
+                        stuff.push_back(ono);
+                    }
+                    sort(stuff.begin(), stuff.end());
+                    temp.waypoints.begin() + stuff[0].pos;
+                    temp.waypoints.insert(temp.waypoints.begin() + stuff[0].pos,  tempC);
+                }
+            }
+            else
+            {
+                if(temp.streetName == "COLORADO")
+                {
+                    if(2021 >= temp.fromAddress.toInt() && 2021 <= temp.toAddress.toInt())
+                    {
+                        cout << "from: " << temp.fromAddress.toStdString() << " to: " << temp.toAddress.toStdString() << endl;
+                        coordinates tempC;
+                        vector<tempData> stuff;
+                        tempC.lattitude = "34.13948426993484";
+                        tempC.longitude = "-118.21073194836286";
+                        for(unsigned int i = 0; i < temp.waypoints.size(); ++i)
+                        {
+                            tempData ono;
+                            ono.place = temp.waypoints[i];
+                            ono.pos = i;
+                            ono.distance = performHaversine( temp.waypoints[i], tempC);
+                            stuff.push_back(ono);
+                        }
+                        sort(stuff.begin(), stuff.end());
+                        temp.waypoints.begin() + stuff[0].pos;
+                        temp.waypoints.insert(temp.waypoints.begin() + stuff[0].pos,  tempC);
+                    }
+                }
+            }
+        }
+        master[temp.streetName + " " + temp.streetSFX].insert(temp);
+    }
+    writeOut(master);
     return 0;
 }
 
 
-void open(QXmlStreamReader &toInput, QXmlStreamWriter &toOutput, QFile &in, QFile &out)
-{
-    out.setFileName("distances12INT.xml");
-    in.setFileName("/Users/blank/Documents/Honors_Project/build-reparser3-Desktop_Qt_5_11_0_clang_64bit-Debug/santized_4_8.xml");
-//    if(!in.open(QFile::ReadOnly | QFile::Text))
-//    {
-//       qDebug() << "Cannot read file" << in.errorString();
-//       exit(0);
-//    }
-    in.open(QIODevice::ReadOnly);
-    toInput.setDevice(&in);
-    out.open(QIODevice::WriteOnly);
-    toOutput.setDevice(&out);
-    toOutput.setAutoFormatting(true);
-    toOutput.writeStartDocument();
-}
 
-void performReadAndWrite(QXmlStreamReader &toInput, QXmlStreamWriter &toOutput)
-{
-
-    toOutput.writeStartElement("EAGLE_ROCK");
-    vector<coordinate> addresses;
-    QString speedLimit;
-    map<coordinate, QString> existsAlready;
-    unsigned int rank = 0;
-    toInput.readNextStartElement();
-    if(toInput.hasError())
-        cout << "no bueno\n";
-    while(!toInput.atEnd())
-    {
-        unsigned int usePos = 0;
-
-        toInput.readNextStartElement();
-
-        if(toInput.name() == "STREET")
-        {
-            toInput.readNextStartElement();
-            toOutput.writeStartElement("STREET");
-            toOutput.writeTextElement("STREET_NAME", toInput.readElementText());
-
-            toInput.readNextStartElement();
-            toInput.readElementText();
-            //toOutput.writeTextElement("STREET_NUM", toInput.readElementText());
-
-            toInput.readNextStartElement();
-            toOutput.writeTextElement("STREET_SFX", toInput.readElementText());
-
-            toInput.readNextStartElement();
-            toInput.readElementText();
-            //toOutput.writeTextElement("TDIR", toInput.readElementText());
-            toInput.readNextStartElement();
-
-            //toOutput.writeTextElement("ZIP", toInput.readElementText());
-            speedLimit = toInput.readElementText();
-            toInput.readNextStartElement();
-
-            speedLimit = toInput.readElementText();
-            toInput.readNextStartElement();
-            cout << "speed limit is:  " << speedLimit.toStdString() << endl;
-
-            while(toInput.name() == "FROM_ADDRESS")
-            {
-                coordinate temp;
-                temp.lat = toInput.readElementText();
-                toInput.readNextStartElement();
-                temp.lon = toInput.readElementText();
-                addresses.push_back(temp);
-                toInput.readNextStartElement();
-            }
-            cout << "ooooo my\n";
-            toOutput.writeTextElement("FROM_ADDRESSES", addresses[0].lat);
-            toOutput.writeTextElement("TO_ADDRESSES", addresses[0].lon);
-            ++usePos;
-
-            unsigned int counter = 0;
-            vector<coordinate> temp1;
-            bool intersection = false;
-
-            while(toInput.name() == "LATTITUDE")
-            {
-                coordinate temp;
-                temp.lat = toInput.readElementText();
-                toInput.readNextStartElement();
-                temp.lon = toInput.readElementText();
-                toInput.readNextStartElement();
-                if(!existsAlready.count(temp))
-                    existsAlready[temp] = QString::fromStdString(to_string(rank++));
-                ++counter;
-                if(temp1.size())
-                {
-                    if(intersection)
-                    {
-                        temp1.clear();
-                        temp1.push_back(temp);
-                    }
-                    else
-                    {
-                        toOutput.writeStartElement("EDGE");
-
-                        toOutput.writeStartElement("FFROM_VERTEX");
-                        toOutput.writeTextElement("LATTITUDE", temp1[0].lat);
-                        toOutput.writeTextElement("LONGITUDE", temp1[0].lon);
-                        toOutput.writeTextElement("rank", existsAlready[temp1[0]]);
-                        toOutput.writeEndElement();
-
-
-                        toOutput.writeTextElement("WEIGHT", performHaversine(temp1[0], temp));
-                        toOutput.writeTextElement("TIME", QString::fromStdString(to_string(performHaversine(temp1[0], temp).toDouble()/speedLimit.toDouble())))
-                                ;
-
-
-                        toOutput.writeStartElement("TO_VERTEX");
-                        toOutput.writeTextElement("LATTITUDE", temp.lat);
-                        toOutput.writeTextElement("LONGITUDE", temp.lon);
-                        toOutput.writeTextElement("rank", existsAlready[temp]);
-                        toOutput.writeEndElement();
-
-                        toOutput.writeEndElement();
-                        counter = 0;
-                        temp1.clear();
-                        temp1.push_back(temp);
-                    }
-                    intersection = false;
-                }
-                else
-                    temp1.push_back(temp);
-
-                if(toInput.name() == "INTERSECTION")
-                {
-                    toOutput.writeTextElement("FROM_ADDRESSES", addresses[usePos].lat);
-                    toOutput.writeTextElement("TO_ADDRESSES", addresses[usePos].lon);
-                    ++usePos;
-                    temp.lat = toInput.readElementText();
-                    toInput.readNextStartElement();
-                    intersection = true;
-                }
-            }
-            toOutput.writeEndElement();
-//            cout << "currently looking at: " << toInput.name().toString().toStdString() << endl;
-        }
-        addresses.clear(); //added clear
-        if(toInput.hasError())
-        {
-            cout << "error: " << toInput.errorString().toStdString() << endl;
-        }
-    }
-    toOutput.writeEndElement();
-    toOutput.writeEndDocument();
-}
-
-QString performHaversine(const coordinate &one, const coordinate &two)
-{
-   double lat1 = one.lat.toDouble() * (PI/180.), long1 = one.lon.toDouble() * (PI/180.);
-   double lat2 = two.lat.toDouble() * (PI/180.), long2 = two.lon.toDouble()* (PI/180.),
-           dLat = lat2 - lat1, dLong = long2 - long1;
-    double computation = asin(sqrt(sin(dLat / 2.) * sin(dLat / 2.) + cos(lat1) * cos(lat2) * sin(dLong / 2.) * sin(dLong / 2.)));
-    double d = 3959.9 * 2 * computation;
-    return QString::fromStdString(to_string(d));
-}
 
