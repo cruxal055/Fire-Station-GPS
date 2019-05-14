@@ -13,6 +13,38 @@ dijkstra::dijkstra()
     readIn();
 }
 
+dijkstra::~dijkstra()
+{
+    delete []allVertexes;
+    delete []allSpeedVertexes;
+    delete []speedLimitGraph;
+    delete []graph;
+}
+
+dijkstra::dijkstra(const dijkstra &other)
+{
+    copyOther(other);
+}
+
+dijkstra& dijkstra::operator=(const dijkstra &other)
+{
+    if(this != &other)
+        copyOther(other);
+    return *this;
+}
+void dijkstra::copyOther(const dijkstra &other)
+{
+    for(unsigned int i = 0; i < 80000; ++i)
+    {
+        graph[i] = other.graph[i];
+        speedLimitGraph[i] = other.speedLimitGraph[i];
+        allSpeedVertexes[i] = other.allSpeedVertexes[i];
+        allVertexes[i] = other.allVertexes[i];
+        legend = other.legend;
+        shortest = other.shortest;
+    }
+}
+
 void dijkstra::readIn()
 {
     QXmlStreamReader input;
@@ -114,7 +146,6 @@ void dijkstra::readIn()
                     closest[street][addressRange].push_back(two);
                     input.readNextStartElement();
                     input.readNextStartElement();
-//                    cout << "ended with: " << input.name().toString().toStdString() << endl;
                     if(input.name() == "FROM_ADDRESSES")
                         break;
                 }
@@ -122,7 +153,6 @@ void dijkstra::readIn()
         }
         input.readNextStartElement();
     }
-    statusReport();
 }
 
 void dijkstra::perform(const QString &lat, const QString &lon)
@@ -157,6 +187,52 @@ void dijkstra::performAlgo(const coordinates &toSearch, vector<indexo> *graphToU
             }
         }
     }
+}
+
+double dijkstra::compileShortestPath2(const coordinates &toSearch, const QString &streetName, const QString &zipCode, bool speed)
+{
+    shortest = QStack<coordinates>();
+    if(speed)
+    {
+        qDebug() << "Compiling based on speed...\n";
+        return compile2(toSearch, streetName, zipCode, allSpeedVertexes);
+    }
+    else
+        return compile2(toSearch, streetName, zipCode, allVertexes);
+}
+
+
+double dijkstra::compile2(const coordinates &toSearch, const QString &streetName, const QString &zipCode, const vertex *vertexList)
+{
+    double distance;
+    int pos = legend[toSearch];
+    distance = vertexList[pos].shortestPath;
+    while(pos != -1)
+    {
+        shortest.push(vertexList[pos].coordinate);
+        pos = vertexList[pos].previous;
+    }
+    return distance;
+}
+
+double dijkstra::justShortestVer2(coordinates &toSeek, const QString &streetName, const QString &zipCode, bool speed)
+{
+    shortest = QStack<coordinates>();
+
+    if(!legend.count(toSeek))
+    {
+        if(zipCode!= " ")
+            toSeek = closestOne(toSeek, streetName, zipCode);
+        else
+        {
+            if(speed)
+                toSeek = figureOutClosest(streetName.toUpper(), toSeek, allSpeedVertexes);
+            else
+                toSeek = figureOutClosest(streetName.toUpper(), toSeek, allVertexes);
+        }
+    }
+    int pos = legend[toSeek];
+    return speed ? allSpeedVertexes[pos].shortestPath :  allVertexes[pos].shortestPath;
 }
 
 coordinates dijkstra::closestOne(const coordinates &noFind, const QString &streetName, const QString &zipCode)
@@ -200,144 +276,8 @@ coordinates dijkstra::closestOne(const coordinates &noFind, const QString &stree
     toReturn = pos->second[shortest];
     closest[streetName.toUpper()].erase(++pos);
     return toReturn;
-
-
 }
 
-
-double dijkstra::compileShortestPath(const QString &lat, const QString &lon,const QString &streetName, const QString &zipCode, bool speed)
-{
-    shortest = QStack<coordinates>();
-    coordinates toSearch(lat,lon);
-    if(speed)
-    {
-        qDebug() << "Compiling based on speed...\n";
-        return compile(toSearch, streetName, zipCode, allSpeedVertexes);
-    }
-    else
-        return compile(toSearch, streetName, zipCode, allVertexes);
-}
-
-double dijkstra::compileShortestPath2(const coordinates &toSearch, const QString &streetName, const QString &zipCode, bool speed)
-{
-    shortest = QStack<coordinates>();
-    if(speed)
-    {
-        qDebug() << "Compiling based on speed...\n";
-        return compile2(toSearch, streetName, zipCode, allSpeedVertexes);
-    }
-    else
-        return compile2(toSearch, streetName, zipCode, allVertexes);
-}
-
-double dijkstra::compile(coordinates &toSearch, const QString &streetName, const QString &zipCode, const vertex *vertexList)
-{
-    double distance;
-    if(!legend.count(toSearch))
-    {
-        qDebug() << "compiling...\n";
-        toSearch = (zipCode!= " ")
-        ? closestOne(toSearch, streetName, zipCode) : closest[streetName.toUpper()].begin()->second[0]; // old
-    }
-    int pos = legend[toSearch];
-    distance = vertexList[pos].shortestPath;
-    while(pos != -1)
-    {
-        shortest.push(vertexList[pos].coordinate);
-        pos = vertexList[pos].previous;
-    }
-    return distance;
-}
-
-
-double dijkstra::compile2(const coordinates &toSearch, const QString &streetName, const QString &zipCode, const vertex *vertexList)
-{
-    double distance;
-    int pos = legend[toSearch];
-    distance = vertexList[pos].shortestPath;
-    while(pos != -1)
-    {
-        shortest.push(vertexList[pos].coordinate);
-        pos = vertexList[pos].previous;
-    }
-    return distance;
-}
-
-double dijkstra::justShortest(const QString &lat, const QString &lon,const QString &streetName, const QString &zipCode, bool speed)
-{
-    shortest = QStack<coordinates>();
-    coordinates coord(lat,lon);
-    if(!legend.count(coord))
-    {
-        if(zipCode!= " ")
-            coord = closestOne(coord, streetName, zipCode);
-    }
-    int pos = legend[coord];
-    return speed ? allSpeedVertexes[pos].shortestPath :  allVertexes[pos].shortestPath;
-}
-
-double dijkstra::justShortestVer2(coordinates &toSeek, const QString &streetName, const QString &zipCode, bool speed)
-{
-    shortest = QStack<coordinates>();
-
-    if(!legend.count(toSeek))
-    {//    map<QString,map<address, vector<coordinates> >  > closest;
-        if(zipCode!= " ")
-            toSeek = closestOne(toSeek, streetName, zipCode);
-        else
-        {
-            if(speed)
-                toSeek = figureOutClosest(streetName.toUpper(), toSeek, allSpeedVertexes);
-            else
-                toSeek = figureOutClosest(streetName.toUpper(), toSeek, allVertexes);
-        }
-    }
-    int pos = legend[toSeek];
-    return speed ? allSpeedVertexes[pos].shortestPath :  allVertexes[pos].shortestPath;
-
-}
-
-
-
-
-void dijkstra::statusReport()
-{
-    cout << legend.size() << endl;
-    cout << closest.size() << endl;
-
-}
-dijkstra::~dijkstra()
-{
-    delete []allVertexes;
-    delete []allSpeedVertexes;
-    delete []speedLimitGraph;
-    delete []graph;
-}
-
-void dijkstra::toString()
-{
-    while(!shortest.empty())
-    {
-        cout << shortest.top().lattitude.toStdString() << " , "  << shortest.top().longitude.toStdString() << endl;
-        shortest.pop();
-    }
-}
-
-bool dijkstra::withinBounds(const QString &streetName)
-{
-    return (closest.count(streetName.toUpper()));
-}
-
-
-double dijkstra::performHaversine(const coordinates &one, const coordinates &two)
-{
-   double lat1 = one.lattitude.toDouble() * (PI/180.), long1 = one.longitude.toDouble() * (PI/180.);
-   double lat2 = two.lattitude.toDouble() * (PI/180.), long2 = two.longitude.toDouble()* (PI/180.),
-           dLat = lat2 - lat1, dLong = long2 - long1;
-   double computation = asin(sqrt(sin(dLat / 2.) * sin(dLat / 2.) + cos(lat1) * cos(lat2) * sin(dLong / 2.) * sin(dLong / 2.)));
-   double d = 3959.9 * 2 * computation;
-   return d;
-}
 
 coordinates dijkstra::figureOutClosest(const QString &streetName, const coordinates &startingPos, vertex *graphToUse)
 {
@@ -359,8 +299,19 @@ coordinates dijkstra::figureOutClosest(const QString &streetName, const coordina
     return graphToUse[shortest].coordinate;
 }
 
-bool dijkstra::legitStreet(const QString &streetName)
+bool dijkstra::withinBounds(const QString &streetName)
 {
-    return closest.count(streetName.toUpper());
+    return (closest.count(streetName.toUpper()));
+}
+
+
+double dijkstra::performHaversine(const coordinates &one, const coordinates &two)
+{
+   double lat1 = one.lattitude.toDouble() * (PI/180.), long1 = one.longitude.toDouble() * (PI/180.);
+   double lat2 = two.lattitude.toDouble() * (PI/180.), long2 = two.longitude.toDouble()* (PI/180.),
+           dLat = lat2 - lat1, dLong = long2 - long1;
+   double computation = asin(sqrt(sin(dLat / 2.) * sin(dLat / 2.) + cos(lat1) * cos(lat2) * sin(dLong / 2.) * sin(dLong / 2.)));
+   double d = 3959.9 * 2 * computation;
+   return d;
 }
 

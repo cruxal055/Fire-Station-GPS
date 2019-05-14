@@ -53,7 +53,6 @@ class MainWindow : public QMainWindow
         void setupWebEngine();
         void setupSignalsAndSlots();
         void displayMap();
-        void getShorto(const QString &one, const QString &two);
 
         dijkstra *master;
 

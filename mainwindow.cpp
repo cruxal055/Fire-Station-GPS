@@ -20,8 +20,6 @@ MainWindow::MainWindow(QWidget *parent)
     master[0].perform("34.12416049793684", "-118.21936667211293"); //york
     master[1].perform("34.13948426993484", "-118.21073194836286"); //colorado
     master[2].perform("34.11091760266492", "-118.19074248113876"); //Fug.
-
-
 }
 
 MainWindow::~MainWindow()
@@ -45,27 +43,6 @@ void MainWindow::displayMap()
 }
 
 
-
-
-void MainWindow::getShorto(const QString &one, const QString &two)
-{
-    QStack<QString> stuff;
-    QString oof = "oof";
-    QVariantList temp;
-    QJsonObject wtf1, wtf2;
-    QJsonArray dataToEmit;
-//    master[0].getShortestPath(one, two);
-    if(master[0].shortest.empty())
-        qDebug() << "it's empty\n";
-    while(!master[0].shortest.empty())
-    {
-        coordinates temp = master[0].shortest.top();
-        master[0].shortest.pop();
-       dataToEmit.push_back(QJsonValue(temp.lattitude + ", " + temp.longitude));
-    }
-    emit testing(dataToEmit);
-
-}
 void MainWindow::setupWebEngine()
 {
     qDebug()<<"starting";
@@ -84,11 +61,8 @@ void MainWindow::updateLatLong(const QString &latLng)
 {
     try
     {
-        int whereToBegin = 3;//old was 3
-//        qDebug() << "ya? " << master[0].withinBounds("COLLEGE VIEW AVE") << endl;
-
+        int whereToBegin = 3;
         ui->currLatLng->setText("Current position: " + latLng);
-        qDebug() << "recieved: " << latLng << endl;
         if(latLng[latLng.size()-1] == ' ')
         {
             QMessageBox::information(
@@ -148,12 +122,10 @@ void MainWindow::updateLatLong(const QString &latLng)
                 }
                 if(master[0].withinBounds(toLook))
                 {
-                    qDebug() << "i like: " << toLook << endl;
                     whereToBegin = i;
                 }
                 else
                 {
-                    qDebug() << "Was: " << toLook << endl;
                     if(regex[regex.size()-1] == "AVENUE")
                     {
                         toLook.chop(6);
@@ -179,7 +151,6 @@ void MainWindow::updateLatLong(const QString &latLng)
                             }
                         }
                     }
-                    qDebug() << "now: " << toLook << endl;
                 }
             }
             for(int i = whereToBegin+1; i < regex.size(); ++i)
@@ -187,15 +158,6 @@ void MainWindow::updateLatLong(const QString &latLng)
         }
         else
             regex[3] += " " + regex[4];
-
-        for(int i = 0; i < regex.size(); ++i)
-        {
-            qDebug() << regex[i] << " ";
-        }
-//        if(regex[regex.size()-1].toUpper() == "AVENUE" || regex[regex.size()-1].toUpper() == "AVE")
-//        {
-//            if(master[0].withinBounds(regex))
-//        }
 
         if(!master[0].withinBounds(regex[whereToBegin]))
         {
@@ -207,11 +169,7 @@ void MainWindow::updateLatLong(const QString &latLng)
 
             return;
         }
-        QStack<QString> stuff;
-        QString oof = "oof";
-        QVariantList temp;
-        QJsonObject wtf1, wtf2;
-        QJsonArray oofOwie;
+        QJsonArray jArray;
 
         int smallestPos = 0;
         QString useThis = " ";
@@ -270,10 +228,10 @@ void MainWindow::updateLatLong(const QString &latLng)
         {
             coordinates temp = master[smallestPos].shortest.top();
             master[smallestPos].shortest.pop();
-            oofOwie.push_back(QJsonValue(temp.lattitude + ", " + temp.longitude));
+            jArray.push_back(QJsonValue(temp.lattitude + ", " + temp.longitude));
         }
 
-        emit testing(oofOwie);
+        emit testing(jArray);
     }catch(errors e)
     {
         if(e == BAD_ADDRESS)
