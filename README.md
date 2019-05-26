@@ -2,6 +2,8 @@
 Welcome to the GPS shortest route calculator for Eagle Rock. This project was designed as a side project with my professor 
 as my mentor and supervisor for it (Dr. John Paul Wilkinson of Pasadena City College). 
 
+- this was the first time I have ever touched Javascript, so please don't look down upon the front end portion too badly.
+
 # Summary:
 - This program essentially takes an input in the form of an address, or street and yields a path from the fire station that is 
 closest to it.
@@ -25,11 +27,20 @@ closest to it.
 #### Link to data: [data](http://geohub.lacity.org/datasets/d3cd48afaacd4913b923fd98c6591276_36?geometry=-120.389%2C33.625%2C-116.434%2C34.422)
 - Then, I filtered the data once more, using the Haversine formula to calculate distances between the streets, and the formula for time to calculate speed limit costs between the streets. The data was formatted two coordinates on the map as the "vertecies" for dijkstra's algorithm, and the distance + speed limit costs as the "weights" of the edges.
 - the program uses Dijkstra's algorithm to calculate the shortest path between the fire stations and every single coordinate
-- ## Some tidbits that I thought was super clever of me:
+
+## Something to note:
 - in order to calculate the shortest path to a specific street, I utilized the underlying data structure that a map is based off of, a Binary Search Tree(BST) 
 - I inputted the coordinate into the map, letting it perform an insertion 
 - Then I subtracted the iterator that it returned to obtain the "root" of that new insertion, which represented the "shortest" path to that street.
 
+## What does it do about invalid addresses? / Other errors the program will give
+- if you try to search up an address outside the bounds of eagle rock, or a specific place, like "Ralphs market" the program will throw an error.
+- the former is intuitive why, because it's outside the response range of the fire stations
+- the latter is because the geocoder did not return a coordinate when a specific place was searched
+
 ## Libraries Used:
-#### QT: [https://doc.qt.io/qt-5.9/qtgui-index.html](http://geohub.lacity.org/datasets/d3cd48afaacd4913b923fd98c6591276_36?geometry=-120.389%2C33.625%2C-116.434%2C34.422)
+#### QT: [QT Gui library](http://geohub.lacity.org/datasets/d3cd48afaacd4913b923fd98c6591276_36?geometry=-120.389%2C33.625%2C-116.434%2C34.422)
+#### Link to Ersi's geocoder: [Geocoder](https://developers.arcgis.com/javascript/3/jshelp/tutorial_geocoder.html)
+
+
 
