@@ -1,12 +1,12 @@
-# eagle_rock_firefighter
+# Eagle Rock Firestation GPS
 Welcome to the GPS shortest route calculator for Eagle Rock. This project was designed as a side project with my professor 
 as my mentor and supervisor for it (Dr. John Paul Wilkinson of Pasadena City College). 
 
 - this was the first time I have ever touched Javascript, so please don't look down upon the front end portion too badly.
 
-# Summary:
+# What it does:
 - This program essentially takes an input in the form of an address, or street and yields a path from the fire station that is 
-closest to it.
+closest to it. 
 
 ### Features:
 - In order to search up an address use the hourglass on the upper left hand side. This is a geocoder from Ersi which yields the coordinates of whatever address the user searches up. The geocoder and the code related to it are on the front-end portion of the program. This portion was done entirely via JS.
