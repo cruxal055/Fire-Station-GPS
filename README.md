@@ -43,6 +43,6 @@ closest to it.
 #### Link to Ersi's geocoder: [Geocoder](https://developers.arcgis.com/javascript/3/jshelp/tutorial_geocoder.html)
 
 
-##Special thanks to Dr. John Paul Wilkinson for supervising this project and testing it to make sure it handled the roughest of inputs! [Wilkinson's website](http://www.drpjw.org/)
+## Special thanks to Dr. John Paul Wilkinson for supervising this project and testing it to make sure it handled the roughest of inputs! [Wilkinson's website](http://www.drpjw.org/)
 
 
