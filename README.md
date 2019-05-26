@@ -33,10 +33,11 @@ closest to it.
 - I inputted the coordinate into the map, letting it perform an insertion 
 - Then I subtracted the iterator that it returned to obtain the "root" of that new insertion, which represented the "shortest" path to that street.
 
-## What does it do about invalid addresses? / Other errors the program will give
+## What does it do if the user inputs invalid addresses/ input? What other errors will the program catch?
 - if you try to search up an address outside the bounds of eagle rock, or a specific place, like "Ralphs market" the program will throw an error.
 - the former is intuitive why, because it's outside the response range of the fire stations
 - the latter is because the geocoder did not return a coordinate when a specific place was searched
+- There are other things it will catch that I can't list at the top of my head at the moment.
 
 ## Libraries Used:
 #### QT: [QT Gui library](http://geohub.lacity.org/datasets/d3cd48afaacd4913b923fd98c6591276_36?geometry=-120.389%2C33.625%2C-116.434%2C34.422)
